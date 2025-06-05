@@ -1,0 +1,39 @@
+@startuml
+actor User
+participant "Order" as Order
+participant "Product" as Product
+participant "Point" as PointS
+participant "Coupon" as Coupon
+participant "Payment" as Payment
+
+User -> Order : 주문 요청 (상품번호, 수량, 쿠폰코드)
+Order -> Product : 재고 확인 및 잠금 (상품번호, 수량)
+Product --> Order : 재고 가능 여부
+
+alt 재고 부족
+    Order -> User : 주문 실패 (재고 부족)
+else 재고 충분
+    Order -> Point : 사용자 잔액 조회
+    Point --> Order : 잔액 정보
+
+    Order -> Coupon : 쿠폰 유효성 확인 (쿠폰코드)
+    Coupon --> Order : 쿠폰 정보 (사용 가능 여부, 할인액)
+
+    alt 결제 가능
+        Order -> Payment : 결제 요청 (최종 결제금액)
+        Payment --> Order : 결제 성공/실패
+
+        alt 결제 성공
+            Order -> Product : 재고 차감
+            Order -> Point : 잔액 차감
+            Order -> Coupon : 쿠폰 사용 처리
+            Order -> User : 주문 완료 응답
+        else 결제 실패
+            Order -> Product : 재고 잠금 해제
+            Order -> User : 결제 실패 응답
+        end
+    else 결제 불가
+        Order -> User : 주문 실패 (잔액 부족 or 쿠폰 불가)
+    end
+end
+@enduml
