@@ -1,0 +1,165 @@
+@startuml
+
+' 사용자
+entity "user" {
+  * user_no : BIGINT <<PK>>
+  * user_id : BIGINT <<UNIQUE>>
+  * user_name : VARCHAR
+  * password : VARCHAR
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 상품
+entity "product" {
+  * prd_no : BIGINT <<PK>>
+  * prd_name : VARCHAR
+  * price : INT
+  * prd_status : ENUM('AVAILABLE', 'UNAVAILABLE') -- 판매상태
+  * total_sales : INT -- 판매량
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 상품 재고
+entity "product_stock" {
+  * prd_stock_no : BIGINT <<PK>>
+  * prd_no : BIGINT <<FK>>
+  * stock_amount : INT
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 상품 재고 이력
+entity "product_stock_history" {
+  * prd_stock_history_no : BIGINT <<PK>>
+  * prd_no : BIGINT <<FK>>
+  * prd_stock_no : BIGINT <<FK>>
+  * change_type : ENUM('INCREASE', 'DECREASE') -- 재고 변경 타입
+  * change_amount : INT -- 변경 수량
+  * before_stock : INT -- 변경 전 재고
+  * after_stock : INT -- 변경 후 재고
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 상품 판매 이력
+entity "product_sales_history" {
+  * prd_sales_history_no : BIGINT <<PK>>
+  * prd_no : BIGINT <<FK>>
+  * user_no : BIGINT <<FK>>
+  * quantity : INT -- 판매수량
+  * sale_date : DATE -- 판매일자
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 주문
+entity "order" {
+  * order_no : BIGINT <<PK>>
+  * user_no : BIGINT <<FK>>
+  * total_price : INT -- 결제금액
+  * status : ENUM('PENDING', 'PAID', 'FAILED', 'CANCELLED') -- 주문상태
+  * user_coupon_no : BIGINT <<FK>>
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 주문 상품
+entity "order_item" {
+  * order_item_no : BIGINT <<PK>>
+  * order_no : BIGINT <<FK>>
+  * prd_no : BIGINT <<FK>>
+  * quantity : INT
+  * price : INT
+  * discount_amount : INT
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 결제
+entity "payment" {
+  * payment_no : BIGINT <<PK>>
+  * order_no : BIGINT <<FK>>
+  * amount : INT
+  * status : ENUM('SUCCESS', 'FAILED') -- 성공, 실패
+  * paid_dtm : DATETIME -- 결제일
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 결제 이력
+entity "payment_history" {
+  * payment_history_no : BIGINT <<PK>>
+  * payment_no : BIGINT <<FK>>
+  * order_no : BIGINT <<FK>>
+  * amount : INT
+  * status : ENUM('SUCCESS', 'FAILED')
+  * message : TEXT
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 쿠폰
+entity "coupon" {
+  * coupon_no : BIGINT <<PK>>
+  * coupon_code : VARCHAR <<UNIQUE>>
+  * discount_amount : INT
+  * expires_dtm : DATETIME -- 만료일시
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 사용자 쿠폰
+entity "user_coupon" {
+  * user_coupon_no : BIGINT <<PK>>
+  * user_no : BIGINT <<FK>>
+  * coupon_no : BIGINT <<FK>>
+  * is_used : BOOLEAN
+  * issued_dtm : DATETIME -- 쿠폰 발급 시간
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 포인트
+entity "user_point" {
+  * use_point_no : BIGINT <<PK>>
+  * user_no : BIGINT <<FK>>
+  * point : INT
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 사용자 포인트 적립/사용 이력
+entity "user_point_history" {
+  * user_point_history_no : BIGINT <<PK>>
+  * use_point_no : BIGINT <<FK>>
+  * user_no : BIGINT <<FK>>
+  * use_type : ENUM('CHARGE', 'USE')
+  * amount : INT
+  * before_point : INT
+  * after_point : INT
+  * created_dtm : DATETIME
+  * updated_dtm : DATETIME
+}
+
+' 관계 정의
+user_point::use_point_no -- user_point_history::use_point_no
+order::order_no -- user_coupon::user_coupon_no
+user ||--o{ order
+order ||--o{ order_item
+order ||--|| payment
+order ||--o{ payment_history
+order ||--|| user_coupon
+user ||--o{ user_coupon
+coupon ||--o{ user_coupon
+user ||--|| user_point
+user ||--o{ user_point_history
+user ||--o{ product_sales_history
+product ||--o{ product_stock
+product_stock ||--o{ product_stock_history
+product ||--o{ product_sales_history
+product ||--o{ order_item
+payment ||--o{ payment_history
+
+@enduml
